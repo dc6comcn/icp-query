@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  icp-query-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: icp-query-app
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    # 如果需要连接到后端API服务，可以取消下面的注释
+    # environment:
+    #   - VUE_APP_API_URL=http://your-backend-service/api
+    # networks:
+    #   - app-network
+
+# 如果需要连接到后端API服务，可以定义网络
+# networks:
+#   app-network:
+#     driver: bridge 
