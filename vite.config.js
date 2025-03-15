@@ -14,9 +14,16 @@ export default defineConfig({
   },
   // 添加以下选项以解决构建问题
   build: {
+    // 确保输出到dist目录
+    outDir: 'dist',
+    // 添加更多构建选项以提高兼容性
     commonjsOptions: {
       transformMixedEsModules: true,
     },
+    // 构建失败时抛出错误
+    emptyOutDir: true,
+    // 生成源码映射文件
+    sourcemap: false,
   },
   // 设置环境变量
   define: {

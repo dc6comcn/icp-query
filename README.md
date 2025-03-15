@@ -10,6 +10,25 @@
 - 分页功能，支持一键查看全部结果
 - 刷新数据和清除搜索功能
 
+## 快速开始（推荐）
+
+我们提供了一键部署脚本，自动完成构建和部署流程：
+
+### Windows系统：
+```bash
+# 在项目根目录执行
+build-scripts\deploy.bat
+```
+
+### Linux/Mac系统：
+```bash
+# 在项目根目录执行
+chmod +x build-scripts/deploy.sh
+./build-scripts/deploy.sh
+```
+
+完成后访问：http://localhost:8080
+
 ## 使用Docker部署
 
 ### 使用Docker Compose（推荐）
@@ -49,52 +68,66 @@
 
 #### 错误: `crypto$2.getRandomValues is not a function`
 - 已在Dockerfile中更新为使用完整的node:16镜像而非alpine版本
-- 如果仍然遇到问题，可以尝试本地构建
+- 如果仍然遇到问题，可以使用一键部署脚本
 
 #### 错误: `exit code: 127` (找不到命令)
 - 检查package.json中的scripts部分是否正确设置了build命令
 - 确保vite已正确安装：`npm install -g vite`
-- 在项目根目录中确保存在vite.config.js文件
+- 使用一键部署脚本，它会在本地环境构建应用
 
-#### 错误: `No dist folder found`
-- 尝试在本地先构建：
-  ```bash
-  npm install
-  npm run build
-  ```
-  然后检查dist文件夹是否生成
+#### 错误: `"/app/dist": not found`
+此错误表明Docker构建过程中没有生成dist目录。**最简单的解决方案是使用一键部署脚本**：
+
+- Windows: `build-scripts\deploy.bat`
+- Linux/Mac: `./build-scripts/deploy.sh`
+
+一键部署脚本会自动：
+1. 构建一个简化版Nginx容器
+2. 在本地构建前端应用
+3. 将构建好的文件复制到容器中
 
 #### 网络问题导致构建失败
 如果在中国大陆构建，可能需要设置npm镜像：
 ```bash
-# 在Dockerfile中添加
-RUN npm config set registry https://registry.npmmirror.com
+# 在命令行中执行
+npm config set registry https://registry.npmmirror.com
 ```
 
 ### 手动预构建方法
 
-如果Docker构建持续失败，可以尝试以下手动步骤：
+如果需要手动执行部署步骤：
 
-1. 本地构建前端应用：
+1. 使用simple-dockerfile构建并启动一个基础容器:
    ```bash
+   # 构建简化版镜像
+   docker build -f simple-dockerfile -t icp-query-simple .
+   
+   # 运行容器
+   docker run -d -p 8080:80 --name icp-query-app icp-query-simple
+   ```
+
+2. 在本地构建前端应用：
+   ```bash
+   # 安装依赖
    npm install
+   
+   # 如需要，设置淘宝镜像
+   npm config set registry https://registry.npmmirror.com
+   
+   # 构建应用
    npm run build
    ```
 
-2. 创建一个更简单的Dockerfile，仅复制预构建的dist文件夹：
-   ```dockerfile
-   FROM nginx:stable-alpine
-   COPY ./dist /usr/share/nginx/html
-   COPY nginx.conf /etc/nginx/conf.d/default.conf
-   EXPOSE 80
-   CMD ["nginx", "-g", "daemon off;"]
+3. 将构建好的文件复制到容器中:
+   ```bash
+   # 获取容器ID
+   docker ps
+   
+   # 复制构建文件到容器
+   docker cp ./dist/. CONTAINER_ID:/usr/share/nginx/html/
    ```
 
-3. 构建并运行简化版Docker镜像：
-   ```bash
-   docker build -t icp-query-app-simple .
-   docker run -d -p 8080:80 --name icp-query-app icp-query-app-simple
-   ```
+4. 访问 http://localhost:8080 查看应用
 
 ## 自定义配置
 
